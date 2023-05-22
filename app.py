@@ -31,8 +31,11 @@ def n_neighbors_uri_audio(genre, start_year, end_year, test_feat):
     return uris, audios
 
 title = "Music Recommender"
-st.title(title)st.write("First of all, welcome! This is the place where you can customize what you want to listen to based on genre and several key audio features. Try playing around with different settings and listen to the songs recommended by our system!")
-st.markdown("##")with st.container():
+st.title(title)
+st.write("First of all, welcome! This is the place where you can customize what you want to listen to based on genre and several key audio features. Try playing around with different settings and listen to the songs recommended by our system!")
+st.markdown("##")
+
+with st.container():
     col1, col2,col3,col4 = st.columns((2,0.5,0.5,0.5))
     with col3:
         st.markdown("***Choose your genre:***")
