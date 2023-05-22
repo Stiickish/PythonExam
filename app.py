@@ -124,5 +124,5 @@ if st.session_state['start_track_i'] < len(tracks):
                         fig = px.line_polar(df, r='r', theta='theta', line_close=True)
                         fig.update_layout(height=400, width=340)
                         st.plotly_chart(fig)
- else:
+        else:
                     st.write("No songs left to recommend")
