@@ -55,4 +55,4 @@ filtered_track_df = filtered_track_df.drop(columns=['analysis_url', 'available_m
 pd.set_option('display.max_columns', None)
 display(filtered_track_df.head())
 
-filtered_track_df.to_csv("filterd_track_df.csv", index=False)
+filtered_track_df.to_csv("filtered_track_df.csv", index=False)
