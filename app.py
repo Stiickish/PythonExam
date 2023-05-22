@@ -17,3 +17,49 @@ genre_names = ['Dance Pop', 'Electronic', 'Electropop', 'Hip Hop', 'Jazz', 'K-po
 audio_feats = ["acousticness", "danceability", "energy", "instrumentalness", "valence", "tempo"]
 exploded_track_df = load_data()
 
+def n_neighbors_uri_audio(genre, start_year, end_year, test_feat):
+    genre = genre.lower()
+    genre_data = exploded_track_df[
+        (exploded_track_df["genres"] == genre) & (exploded_track_df["release_year"] >= start_year) & (
+                    exploded_track_df["release_year"] <= end_year)]
+    genre_data = genre_data.sort_values(by='popularity', ascending=False)[:1000]
+    neigh = NearestNeighbors()
+    neigh.fit(genre_data[audio_feats].to_numpy())
+    n_neighbors = neigh.kneighbors([test_feat], n_neighbors=len(genre_data), return_distance=False)[0]
+    uris = genre_data.iloc[n_neighbors]["uri"].tolist()
+    audios = genre_data.iloc[n_neighbors][audio_feats].to_numpy()
+    return uris, audios
+
+title = "Music Recommender"
+st.title(title)st.write("First of all, welcome! This is the place where you can customize what you want to listen to based on genre and several key audio features. Try playing around with different settings and listen to the songs recommended by our system!")
+st.markdown("##")with st.container():
+    col1, col2,col3,col4 = st.columns((2,0.5,0.5,0.5))
+    with col3:
+        st.markdown("***Choose your genre:***")
+        genre = st.radio(
+            "",
+            genre_names, index=genre_names.index("Pop"))
+    with col1:
+        st.markdown("***Choose features to customize:***")
+        start_year, end_year = st.slider(
+            'Select the year range',
+            1990, 2019, (2015, 2019)
+        )
+        acousticness = st.slider(
+            'Acousticness',
+            0.0, 1.0, 0.5)
+        danceability = st.slider(
+            'Danceability',
+            0.0, 1.0, 0.5)
+        energy = st.slider(
+            'Energy',
+            0.0, 1.0, 0.5)
+        instrumentalness = st.slider(
+            'Instrumentalness',
+            0.0, 1.0, 0.0)
+        valence = st.slider(
+            'Valence',
+            0.0, 1.0, 0.45)
+        tempo = st.slider(
+            'Tempo',
+            0.0, 244.0, 118.0)
