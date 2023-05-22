@@ -6,7 +6,7 @@ from sklearn.neighbors import NearestNeighbors
 import plotly.express as px
 import streamlit.components.v1 as components
 
-@st.cache(allow_output_mutation=True)
+#@st.cache_resource(allow_output_mutation=True)
 def load_data():
     df = pd.read_csv("filtered_track_df.csv")
     df['genres'] = df.genres.apply(lambda x: [i[1:-1] for i in str(x)[1:-1].split(", ")])
@@ -74,6 +74,7 @@ uris, audios = n_neighbors_uri_audio(genre, start_year, end_year, test_feat)
 tracks = []
 for uri in uris:
     track = """<iframe src="https://open.spotify.com/embed/track/{}" width="260" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>""".format(uri)
+    type(tracks)
     tracks.append(track)
 
 if 'previous_inputs' not in st.session_state:
