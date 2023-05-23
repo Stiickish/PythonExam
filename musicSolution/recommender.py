@@ -10,7 +10,7 @@ import implicit
 import scipy
 import matplotlib.pyplot as plt
 
-from musicSolution.data import ArtistRetriever, load_user_artists
+from data import ArtistRetriever, load_user_artists
 """ from recommender import data
 from data import load_user_artist """
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # instantiate recommender, fit, and recommend
     recommender = ImplicitRecommender(artist_retriever, implict_model)
     recommender.fit(user_artists)
-    artists, scores = recommender.recommend(2, user_artists, n=10)
+    artists, scores = recommender.recommend(2, user_artists, n=5)
 
     # print results
     for artist, score in zip(artists, scores):
