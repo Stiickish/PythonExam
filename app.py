@@ -1,4 +1,5 @@
 import streamlit as st
+
 st.set_page_config(page_title="Song Recommendation", layout="wide")
 
 import pandas as pd
@@ -6,22 +7,26 @@ from sklearn.neighbors import NearestNeighbors
 import plotly.express as px
 import streamlit.components.v1 as components
 
-#@st.cache_resource(allow_output_mutation=True)
+
+# @st.cache_resource(allow_output_mutation=True)
 def load_data():
     df = pd.read_csv("filtered_track_df.csv")
     df['genres'] = df.genres.apply(lambda x: [i[1:-1] for i in str(x)[1:-1].split(", ")])
     exploded_track_df = df.explode("genres")
     return exploded_track_df
 
-genre_names = ['Dance Pop', 'Electronic', 'Electropop', 'Hip Hop', 'Jazz', 'K-pop', 'Latin', 'Pop', 'Pop Rap', 'R&B', 'Rock']
+
+genre_names = ['Dance Pop', 'Electronic', 'Electropop', 'Hip Hop', 'Jazz', 'K-pop', 'Latin', 'Pop', 'Pop Rap', 'R&B',
+               'Rock']
 audio_feats = ["acousticness", "danceability", "energy", "instrumentalness", "valence", "tempo"]
 exploded_track_df = load_data()
+
 
 def n_neighbors_uri_audio(genre, start_year, end_year, test_feat):
     genre = genre.lower()
     genre_data = exploded_track_df[
         (exploded_track_df["genres"] == genre) & (exploded_track_df["release_year"] >= start_year) & (
-                    exploded_track_df["release_year"] <= end_year)]
+                exploded_track_df["release_year"] <= end_year)]
     genre_data = genre_data.sort_values(by='popularity', ascending=False)[:1000]
     neigh = NearestNeighbors()
     neigh.fit(genre_data[audio_feats].to_numpy())
@@ -30,13 +35,15 @@ def n_neighbors_uri_audio(genre, start_year, end_year, test_feat):
     audios = genre_data.iloc[n_neighbors][audio_feats].to_numpy()
     return uris, audios
 
+
 title = "Music Recommender"
 st.title(title)
-st.write("First of all, welcome! This is the place where you can customize what you want to listen to based on genre and several key audio features. Try playing around with different settings and listen to the songs recommended by our system!")
+st.write(
+    "First of all, welcome! This is the place where you can customize what you want to listen to based on genre and several key audio features. Try playing around with different settings and listen to the songs recommended by our system!")
 st.markdown("##")
 
 with st.container():
-    col1, col2,col3,col4 = st.columns((2,0.5,0.5,0.5))
+    col1, col2, col3, col4 = st.columns((2, 0.5, 0.5, 0.5))
     with col3:
         st.markdown("***Choose your genre:***")
         genre = st.radio(
@@ -73,7 +80,8 @@ uris, audios = n_neighbors_uri_audio(genre, start_year, end_year, test_feat)
 
 tracks = []
 for uri in uris:
-    track = """<iframe src="https://open.spotify.com/embed/track/{}" width="260" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>""".format(uri)
+    track = """<iframe src="https://open.spotify.com/embed/track/{}" width="260" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>""".format(
+        uri)
     type(tracks)
     tracks.append(track)
 
@@ -94,36 +102,39 @@ with st.container():
         if st.session_state['start_track_i'] < len(tracks):
             st.session_state['start_track_i'] += tracks_per_page
 
-current_tracks = tracks[st.session_state['start_track_i']: st.session_state['start_track_i'] + tracks_per_page]
-current_audios = audios[st.session_state['start_track_i']: st.session_state['start_track_i'] + tracks_per_page]
+current_tracks = tracks[st.session_state['start_track_i']:
+                        st.session_state['start_track_i'] + tracks_per_page]
+current_audios = audios[st.session_state['start_track_i']:
+                        st.session_state['start_track_i'] + tracks_per_page]
 if st.session_state['start_track_i'] < len(tracks):
-        for i, (track, audio) in enumerate(zip(current_tracks, current_audios)):
-            if i % 2 == 0:
-                with col1:
-                    components.html(
-                        track,
-                        height=400,
-                    )
-                    with st.expander("See more details"):
-                        df = pd.DataFrame(dict(
-                            r=audio[:5],
-                            theta=audio_feats[:5]))
-                        fig = px.line_polar(df, r='r', theta='theta', line_close=True)
-                        fig.update_layout(height=400, width=340)
-                        st.plotly_chart(fig)
+    for i, (track, audio) in enumerate(zip(current_tracks, current_audios)):
+        if i % 2 == 0:
+            with col1:
+                components.html(
+                    track,
+                    height=400,
+                )
+                with st.expander("See more details"):
+                    df = pd.DataFrame(dict(
+                        r=audio[:5],
+                        theta=audio_feats[:5]))
+                    print(df)
+                    fig = px.line_polar(df, r='r', theta='theta', line_close=True)
+                    fig.update_layout(height=400, width=340)
+                    st.plotly_chart(fig)
 
-            else:
-                with col3:
-                    components.html(
-                        track,
-                        height=400,
-                    )
-                    with st.expander("See more details"):
-                        df = pd.DataFrame(dict(
-                            r=audio[:5],
-                            theta=audio_feats[:5]))
-                        fig = px.line_polar(df, r='r', theta='theta', line_close=True)
-                        fig.update_layout(height=400, width=340)
-                        st.plotly_chart(fig)
         else:
-                    st.write("No songs left to recommend")
+            with col3:
+                components.html(
+                    track,
+                    height=400,
+                )
+                with st.expander("See more details"):
+                    df = pd.DataFrame(dict(
+                        r=audio[:5],
+                        theta=audio_feats[:5]))
+                    fig = px.line_polar(df, r='r', theta='theta', line_close=True)
+                    fig.update_layout(height=400, width=340)
+                    st.plotly_chart(fig)
+else:
+    st.write("No songs left to recommend")
