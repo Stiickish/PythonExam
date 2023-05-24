@@ -22,13 +22,20 @@ def main():
     st.title("Music Solution 2000")
 
     # Determine the maximum user ID based on the loaded user-artist matrix
-    max_user_id = user_artist_matrix.shape[0] - 1
+    #max_user_id = user_artist_matrix.shape[0] - 1
+    file_path = "./lastfmdata/user_artist_input_list.csv"
+    # Nu skal vi kontrollere hvad max_user_id er ud fra sidste linje i filen.
+    with open(file_path, "r") as csvfile:
+        lines = csvfile.readlines()
+        if lines:
+            last_line = lines[-1].strip().split(" ")
+            max_user_id = int(last_line[0])
 
     if "input_user_artists" not in session_state:
         session_state["input_user_artists"] = []
 
     # Hent User-id via input feltet
-    user_id = st.number_input("User ID (min:2, max:2100)", min_value=2, max_value=2100, value=2, step=1)
+    user_id = st.number_input(f"User ID (min:2, max:{max_user_id})", min_value=2, max_value=max_user_id, value=2, step=1)
 
     # Hent user-input for de tre ting der skal med i algoritmen (factors,  iterations og regularization)
     factors = st.number_input("Factors", value=50)
@@ -101,13 +108,6 @@ def main():
     if len(session_state.input_user_artists) >= 5:
         execute_algorithm_with_user_data = st.button("Execute Algorithm on your data", key="user_input_button")
         if execute_algorithm_with_user_data:
-            file_path = "./lastfmdata/user_artist_input_list.csv"
-            # Nu skal vi kontrollere hvad max_user_id er ud fra sidste linje i filen.
-            with open(file_path, "r") as csvfile:
-                lines = csvfile.readlines()
-                if lines:
-                    last_line = lines[-1].strip().split(" ")
-                    max_user_id = int(last_line[0])
 
             # Gem listen i filen.
             with open(file_path, "a", newline="") as csvfile:  # med "a" i stedet for "w" appendes der, så den ikke laver en ny liste hver gang.
