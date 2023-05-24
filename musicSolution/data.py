@@ -24,17 +24,20 @@ class ArtistRetriever:
 
     def __init__(self):
         self.artists_df = None
+        self.artists = {}  # Dictionary to store artist objects
 
     def get_artist_name_from_id(self, artist_id: int) -> str:
         """Return the artist name from the artist ID."""
         return self.artists_df.loc[artist_id, "name"]
 
     def load_artists(self, artists_file: Path) -> None:
-        """Load the artists file and stores it as a Pandas dataframe in a private attribute."""
+        """Load the artists file and store it as a Pandas dataframe in a private attribute."""
         artists_df = pd.read_csv(artists_file, sep="\t")
         artists_df = artists_df.set_index("id")
         self.artists_df = artists_df
 
+        # Populate the artists dictionary
+        self.artists = artists_df["name"].to_dict()
 
 if __name__ == "__main__":
     user_artists_matrix = load_user_artists(

@@ -1,3 +1,5 @@
+import csv
+
 import streamlit as st
 from pathlib import Path
 import scipy
@@ -7,6 +9,7 @@ import matplotlib.pyplot as plt
 
 from data import load_user_artists, ArtistRetriever
 from recommender import ImplicitRecommender
+from streamlit import session_state
 
 # Here user-artist matrix is loaded
 user_artist_matrix = load_user_artists(Path("../musicSolution/lastfmdata/user_artists.dat"))
@@ -17,6 +20,12 @@ artist_retriever.load_artists(Path("../musicSolution/lastfmdata/artists.dat"))
 
 def main():
     st.title("Music Solution 2000")
+
+    # Determine the maximum user ID based on the loaded user-artist matrix
+    max_user_id = user_artist_matrix.shape[0] - 1
+
+    if "input_user_artists" not in session_state:
+        session_state["input_user_artists"] = []
 
     # Hent User-id via input feltet
     user_id = st.number_input("User ID (min:2, max:2100)", min_value=2, max_value=2100, value=2, step=1)
@@ -30,6 +39,9 @@ def main():
     execute_algorithm = st.button("Execute Algorithm")
 
     if execute_algorithm:
+        # Append the user's favorite bands to user_artist_matrix
+        update_user_artists(user_id, session_state.input_user_artists, user_artist_matrix)
+
         # Instantiate Alternating Least Square med implicit hvor der benyttes brugerens input-værdier:
         implicit_model = implicit.als.AlternatingLeastSquares(
             factors=factors, iterations=iterations, regularization=regularization
@@ -62,6 +74,55 @@ def main():
 
             # Vis plot-tegningen
             st.pyplot(fig)
+
+    st.header("Instead of getting recommendations from another user, you can get your own recommendations. Write at least 5 artists and maximum 10 to get a precise recommendation.")
+    input_user_artist_likes = st.text_input("Write an artist you like and click 'Add'")
+    if st.button("Add"):
+        if len(session_state.input_user_artists) >= 10:
+            st.write("You have reached the maximum limit of 10 artists.")
+        else:
+            artist_already_added = False
+            for artist in session_state.input_user_artists:
+                if artist.lower() == input_user_artist_likes.lower():
+                    artist_already_added = True
+                    break
+
+            if artist_already_added:
+                st.write("Artist is already in the list!")
+                st.text("Current artists: " + ", ".join(
+                    session_state.input_user_artists))  # Display the current list of input artists
+
+            else:
+                session_state.input_user_artists.append(input_user_artist_likes)
+                st.write("Artist added successfully!")
+                st.text("Current artists: " + ", ".join(
+                    session_state.input_user_artists))  # Display the current list of input artists
+
+    if len(session_state.input_user_artists) >= 5:
+        execute_algorithm_with_user_data = st.button("Execute Algorithm on your data", key="user_input_button")
+        if execute_algorithm_with_user_data:
+            file_path = "user_artist_input_list.csv"
+            with open(file_path, "w", newline="") as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(["Artist"])
+                writer.writerows([[artist] for artist in session_state.input_user_artists])
+
+            st.write("Your list was saved.")
+
+def update_user_artists(user_id, favorite_bands, user_artist_matrix):
+    for band in favorite_bands:
+        artist_id = get_artist_id(band)  # Retrieve the artist ID based on the band name
+        if artist_id is not None:
+            # Update the user_artist_matrix with the new entry
+            user_artist_matrix[user_id, artist_id] = 1  # Set the weight as 1
+
+
+def get_artist_id(artist_name):
+    artist_id = None
+    for artist_id, name in artist_retriever.artists.items():
+        if name == artist_name:
+            return artist_id
+    return artist_id
 
 
 if __name__ == "__main__":
