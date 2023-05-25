@@ -6,13 +6,17 @@ import scipy
 import pandas as pd
 import implicit
 import matplotlib.pyplot as plt
+import numpy as np
 
 from data import load_user_artists, ArtistRetriever
 from recommender import ImplicitRecommender
 from streamlit import session_state
 
 # Here user-artist matrix is loaded
-user_artist_matrix = load_user_artists(Path("../musicSolution/lastfmdata/user_artists.dat"))
+user_artist_matrix = load_user_artists(Path("../musicSolution/lastfmdata/user_artists.csv"))
+max_user_id = user_artist_matrix.shape[0] - 1 #Vi skal finde et max_id som vi kan bruge i funktioner.
+total_number_of_users = user_artist_matrix.shape[0]
+print(total_number_of_users)
 
 # Instantiate artist retriever:
 artist_retriever = ArtistRetriever()
@@ -37,8 +41,7 @@ def main():
         session_state["input_user_artists"] = []
 
     # Hent User-id via input feltet
-    user_id = st.number_input(f"User ID (min:2, max:{max_user_id})", min_value=2, max_value=max_user_id, value=2,
-                              step=1)
+    user_id = st.number_input(f"User ID (min:2, max:{max_user_id})", min_value=2, max_value=max_user_id, value=2, step=1)
 
     # Hent user-input for de tre ting der skal med i algoritmen (factors,  iterations og regularization)
     factors = st.number_input("Factors", value=50)
@@ -49,6 +52,7 @@ def main():
     execute_algorithm = st.button("Execute Algorithm")
 
     if execute_algorithm:
+        update_user_artists(user_id, session_state.input_user_artists, user_artist_matrix)
         # Append the user's favorite bands to user_artist_matrix
         # update_user_artists(user_id, session_state.input_user_artists, user_artist_matrix)
 
@@ -119,7 +123,9 @@ def main():
 
     if len(session_state.input_user_artists) >= 5:
         execute_algorithm_with_user_data = st.button("Execute Algorithm on your data", key="user_input_button")
+
         if execute_algorithm_with_user_data:
+            update_user_artists(user_id, session_state.input_user_artists, user_artist_matrix)
 
             # Gem listen i filen.
             with open(file_path, "a",
@@ -137,13 +143,41 @@ def main():
             # Opdatér user_id, så der kan laves nye sammenligninger:
             max_user_id += 1
 
+            # Use the newly created user_id here:
+            update_user_artists(max_user_id, session_state.input_user_artists, user_artist_matrix)
 
-# def update_user_artists(user_id, favorite_bands, user_artist_matrix):
-#     for band in favorite_bands:
-#         artist_id = get_artist_id(band)  # Retrieve the artist ID based on the band name
-#         if artist_id is not None:
-#             # Update the user_artist_matrix with the new entry
-#             user_artist_matrix[user_id, artist_id] = 1  # Set the weight as 1
+            # Instantiate Alternating Least Square med implicit hvor der benyttes brugerens input-værdier:
+            implicit_model = implicit.als.AlternatingLeastSquares(
+                factors=factors, iterations=iterations, regularization=regularization
+            )
+
+            # Instantiate recommender, fit, and recommend:
+            recommender = ImplicitRecommender(artist_retriever, implicit_model)
+            recommender.fit(user_artist_matrix)
+            artists, scores = recommender.recommend(max_user_id, user_artist_matrix, n=5)
+
+            # Laves to kolonner for at vise anbefalingerne side om side:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.subheader("Top 5 recommendations for user ID: " + str(max_user_id))
+                for artist, score in zip(artists, scores):
+                    st.write(f"{artist}: {score}")
+
+            with col2:
+                # Plot-tegningen er kolonne nummer 2
+                fig, ax = plt.subplots(figsize=(8, 6))
+                for artist, score in zip(artists, scores):
+                    ax.bar(artist, score)
+
+                # Sæt labels for akserne og titlerne.
+                ax.set_xlabel("Artist")
+                ax.set_ylabel("Score")
+                ax.set_title("Top 5 recommendations")
+                ax.set_xticklabels(artists, rotation=45)
+
+                # Vis plot-tegningen
+                st.pyplot(fig)
 
 
 def get_artist_id(artist_name):
@@ -151,8 +185,17 @@ def get_artist_id(artist_name):
         for line in artists_file:
             artist_id, name, *_ = line.strip().split("\t")
             if name.lower() == artist_name.lower():
-                return int(artist_id.lstrip("0")) #med lstrip fjernes der hvad stringen begynder med, hvis det matcher det der indsættes ( her "0" ).
+                return int(artist_id.lstrip(
+                    "0"))  # med lstrip fjernes der hvad stringen begynder med, hvis det matcher det der indsættes ( her "0" ).
     return None
+
+
+def update_user_artists(user_id, favorite_bands, user_artist_matrix):
+    for band in favorite_bands:
+        artist_id = get_artist_id(band)  # Retrieve the artist ID based on the band name
+        if artist_id is not None:
+            # Update the user_artist_matrix with the new entry
+            user_artist_matrix[user_id, artist_id] = 1  # Set the weight as 1
 
 
 if __name__ == "__main__":
