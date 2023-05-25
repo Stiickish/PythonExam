@@ -24,13 +24,14 @@ def main():
 
     # Determine the maximum user ID based on the loaded user-artist matrix
     # max_user_id = user_artist_matrix.shape[0] - 1
-    file_path = "./lastfmdata/user_artist_input_list.csv"
+    file_path = "./lastfmdata/user_artists.csv"
     # Nu skal vi kontrollere hvad max_user_id er ud fra sidste linje i filen.
-    with open(file_path, "r") as csvfile:
-        lines = csvfile.readlines()
-        if lines:
-            last_line = lines[-1].strip().split(" ")
-            max_user_id = int(last_line[0])
+    if Path(file_path).is_file():
+        with open(file_path, "r") as csvfile:
+            lines = csvfile.readlines()
+            if lines:
+                last_line = lines[-1].strip().split("\t")
+                max_user_id = int(last_line[0])
 
     if "input_user_artists" not in session_state:
         session_state["input_user_artists"] = []
@@ -123,12 +124,14 @@ def main():
             # Gem listen i filen.
             with open(file_path, "a",
                       newline="") as csvfile:  # med "a" i stedet for "w" appendes der, så den ikke laver en ny liste hver gang.
-                writer = csv.writer(csvfile, delimiter=" ")
+                writer = csv.writer(csvfile, delimiter="\t")
                 for i, artist in enumerate(session_state.input_user_artists, start=1):
-                    artist_id = i if i <= 10 else 10  # Limit artistID to a maximum of 10
-                    weight = 15000 - (1000 * (i - 1)) if i <= 10 else 5000  # Calculate weight based on position
-                    writer.writerow([max_user_id + 1, artist_id, weight])
-
+                    artist_id = get_artist_id(artist)
+                    if artist_id is not None:
+                        weight = str(15000 - (1000 * (i - 1)) if i <= 10 else 5000)  # Convert weight to string
+                        weight = int(weight.strip())  # Remove leading/trailing spaces and convert back to integer
+                        writer.writerow([str(max_user_id + 1), str(artist_id).zfill(4),
+                                         weight])  # Convert artist_id to a 4-digit string
             st.write("Your list was saved.")
 
             # Opdatér user_id, så der kan laves nye sammenligninger:
@@ -148,7 +151,7 @@ def get_artist_id(artist_name):
         for line in artists_file:
             artist_id, name, *_ = line.strip().split("\t")
             if name.lower() == artist_name.lower():
-                return int(artist_id)
+                return int(artist_id.lstrip("0")) #med lstrip fjernes der hvad stringen begynder med, hvis det matcher det der indsættes ( her "0" ).
     return None
 
 
