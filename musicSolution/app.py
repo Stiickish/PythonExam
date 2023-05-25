@@ -18,11 +18,12 @@ user_artist_matrix = load_user_artists(Path("../musicSolution/lastfmdata/user_ar
 artist_retriever = ArtistRetriever()
 artist_retriever.load_artists(Path("../musicSolution/lastfmdata/artists.dat"))
 
+
 def main():
     st.title("Music Solution 2000")
 
     # Determine the maximum user ID based on the loaded user-artist matrix
-    #max_user_id = user_artist_matrix.shape[0] - 1
+    # max_user_id = user_artist_matrix.shape[0] - 1
     file_path = "./lastfmdata/user_artist_input_list.csv"
     # Nu skal vi kontrollere hvad max_user_id er ud fra sidste linje i filen.
     with open(file_path, "r") as csvfile:
@@ -35,7 +36,8 @@ def main():
         session_state["input_user_artists"] = []
 
     # Hent User-id via input feltet
-    user_id = st.number_input(f"User ID (min:2, max:{max_user_id})", min_value=2, max_value=max_user_id, value=2, step=1)
+    user_id = st.number_input(f"User ID (min:2, max:{max_user_id})", min_value=2, max_value=max_user_id, value=2,
+                              step=1)
 
     # Hent user-input for de tre ting der skal med i algoritmen (factors,  iterations og regularization)
     factors = st.number_input("Factors", value=50)
@@ -47,7 +49,7 @@ def main():
 
     if execute_algorithm:
         # Append the user's favorite bands to user_artist_matrix
-        #update_user_artists(user_id, session_state.input_user_artists, user_artist_matrix)
+        # update_user_artists(user_id, session_state.input_user_artists, user_artist_matrix)
 
         # Instantiate Alternating Least Square med implicit hvor der benyttes brugerens input-værdier:
         implicit_model = implicit.als.AlternatingLeastSquares(
@@ -82,7 +84,8 @@ def main():
             # Vis plot-tegningen
             st.pyplot(fig)
 
-    st.header("Instead of getting recommendations from another user, you can get your own recommendations. Write the name of at least 5 artists and maximum 10 to get a precise recommendation.")
+    st.header(
+        "Instead of getting recommendations from another user, you can get your own recommendations. Write the name of at least 5 artists and maximum 10 to get a precise recommendation.")
     input_user_artist_likes = st.text_input("Write the name of an artist you like and click 'Add'")
     if st.button("Add"):
         if len(session_state.input_user_artists) >= 10:
@@ -100,17 +103,26 @@ def main():
                     session_state.input_user_artists))  # Display the current list of input artists
 
             else:
-                session_state.input_user_artists.append(input_user_artist_likes)
-                st.write("Artist added successfully!")
-                st.text("Current artists: " + ", ".join(
-                    session_state.input_user_artists))  # Display the current list of input artists
+                # Hver gang brugeren inputter en artist kører vi lige igennem artists.dat for at se om artisten findes i datasættet.
+                artist_id = get_artist_id(input_user_artist_likes)
+                if artist_id is not None:
+                    session_state.input_user_artists.append(input_user_artist_likes)
+                    st.write("Artist added successfully!")
+                    # Hmmmm ... jeg vil gerne have ID med ud ... how do I do that?
+                    artist_ids = [str(get_artist_id(artist)) for artist in session_state.input_user_artists]
+                    artist_info = ", ".join(f"{artist} (ID: {artist_id})" for artist, artist_id in
+                                            zip(session_state.input_user_artists, artist_ids))
+                    st.text("Current artists: " + artist_info)
+                else:
+                    st.write("Artist not found in the database.")
 
     if len(session_state.input_user_artists) >= 5:
         execute_algorithm_with_user_data = st.button("Execute Algorithm on your data", key="user_input_button")
         if execute_algorithm_with_user_data:
 
             # Gem listen i filen.
-            with open(file_path, "a", newline="") as csvfile:  # med "a" i stedet for "w" appendes der, så den ikke laver en ny liste hver gang.
+            with open(file_path, "a",
+                      newline="") as csvfile:  # med "a" i stedet for "w" appendes der, så den ikke laver en ny liste hver gang.
                 writer = csv.writer(csvfile, delimiter=" ")
                 for i, artist in enumerate(session_state.input_user_artists, start=1):
                     artist_id = i if i <= 10 else 10  # Limit artistID to a maximum of 10
@@ -122,6 +134,7 @@ def main():
             # Opdatér user_id, så der kan laves nye sammenligninger:
             max_user_id += 1
 
+
 # def update_user_artists(user_id, favorite_bands, user_artist_matrix):
 #     for band in favorite_bands:
 #         artist_id = get_artist_id(band)  # Retrieve the artist ID based on the band name
@@ -131,11 +144,12 @@ def main():
 
 
 def get_artist_id(artist_name):
-    artist_id = None
-    for artist_id, name in artist_retriever.artists.items():
-        if name == artist_name:
-            return artist_id
-    return artist_id
+    with open("../musicSolution/lastfmdata/artists.dat", "r", encoding="utf-8") as artists_file:
+        for line in artists_file:
+            artist_id, name, *_ = line.strip().split("\t")
+            if name.lower() == artist_name.lower():
+                return int(artist_id)
+    return None
 
 
 if __name__ == "__main__":
