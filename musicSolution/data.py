@@ -41,7 +41,7 @@ class ArtistRetriever:
 
 if __name__ == "__main__":
     user_artists_matrix = load_user_artists(
-        Path("../musicSolution/lastfmdata/user_artists.dat")
+        Path("../musicSolution/lastfmdata/user_artists.csv")
     )
     print(user_artists_matrix)
     artist_retriever = ArtistRetriever()

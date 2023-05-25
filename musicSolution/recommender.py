@@ -54,7 +54,7 @@ class ImplicitRecommender:
 if __name__ == "__main__":
 
     # load user artists matrix
-    user_artists = load_user_artists(Path("../musicSolution/lastfmdata/user_artists.dat"))
+    user_artists = load_user_artists(Path("../musicSolution/lastfmdata/user_artists.csv"))
 
     # instantiate artist retriever
     artist_retriever = ArtistRetriever()
