@@ -7,7 +7,7 @@ import pandas as pd
 import implicit
 import matplotlib.pyplot as plt
 import numpy as np
-
+import time
 from data import load_user_artists, ArtistRetriever
 from recommender import ImplicitRecommender
 from streamlit import session_state
@@ -122,7 +122,7 @@ def main():
                     st.write("Artist not found in the database.")
 
     if len(session_state.input_user_artists) >= 5:
-        execute_algorithm_with_user_data = st.button("Execute Algorithm on your data", key="user_input_button")
+        execute_algorithm_with_user_data = st.button("Put list in database", key="user_input_button")
 
         if execute_algorithm_with_user_data:
             update_user_artists(user_id, session_state.input_user_artists, user_artist_matrix)
@@ -142,44 +142,11 @@ def main():
 
             # Opdatér user_id, så der kan laves nye sammenligninger:
             max_user_id += 1
+            # Reset the input_user_artists list
+            session_state.input_user_artists = []
 
-            # Use the newly created user_id here:
-            update_user_artists(max_user_id, session_state.input_user_artists, user_artist_matrix)
-
-            # Instantiate Alternating Least Square med implicit hvor der benyttes brugerens input-værdier:
-            implicit_model = implicit.als.AlternatingLeastSquares(
-                factors=factors, iterations=iterations, regularization=regularization
-            )
-
-            # Instantiate recommender, fit, and recommend:
-            recommender = ImplicitRecommender(artist_retriever, implicit_model)
-            recommender.fit(user_artist_matrix)
-            artists, scores = recommender.recommend(max_user_id, user_artist_matrix, n=5)
-
-            # Laves to kolonner for at vise anbefalingerne side om side:
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.subheader("Top 5 recommendations for user ID: " + str(max_user_id))
-                for artist, score in zip(artists, scores):
-                    st.write(f"{artist}: {score}")
-
-            with col2:
-                # Plot-tegningen er kolonne nummer 2
-                fig, ax = plt.subplots(figsize=(8, 6))
-                for artist, score in zip(artists, scores):
-                    ax.bar(artist, score)
-
-                # Sæt labels for akserne og titlerne.
-                ax.set_xlabel("Artist")
-                ax.set_ylabel("Score")
-                ax.set_title("Top 5 recommendations")
-                ax.set_xticklabels(artists, rotation=45)
-
-                # Vis plot-tegningen
-                st.pyplot(fig)
-
-
+            # Rerun the script to reload the page after a short delay
+            st.experimental_rerun()
 def get_artist_id(artist_name):
     with open("../musicSolution/lastfmdata/artists.dat", "r", encoding="utf-8") as artists_file:
         for line in artists_file:

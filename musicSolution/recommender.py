@@ -41,14 +41,18 @@ class ImplicitRecommender:
         n: int = 10,
     ) -> Tuple[List[str], List[float]]: #der returneres en tuple med en list af strings og en list af float (hhv en liste af artist-navne og "scores"
         """Return the top n recommendations for the given user."""
+        user_index = user_id - 1  # Adjust user_id to zero-based index
         artist_ids, scores = self.implicit_model.recommend(
             user_id, user_artists_matrix[n], N=n
         )
-        artists = [ #Her laves der om fra en liste af artists_id til deres navne
-            self.artist_retriever.get_artist_name_from_id(artist_id)
-            for artist_id in artist_ids
-        ]
-        return artists, scores
+        artists = []
+        filtered_scores = []
+        for artist_id, score in zip(artist_ids, scores):
+            if user_artists_matrix[user_index, artist_id] == 0:
+                artists.append(self.artist_retriever.get_artist_name_from_id(artist_id))
+                filtered_scores.append(score)
+
+        return artists, filtered_scores
 
 
 if __name__ == "__main__":
