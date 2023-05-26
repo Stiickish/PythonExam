@@ -90,11 +90,11 @@ class KNNRecommender:
 
 if __name__ == "__main__":
     # Load user artists matrix
-    user_artists = load_user_artists(Path("../datasets/user_artists.dat"))
+    user_artists = load_user_artists(Path("../musicSolution/lastfmdata/user_artists.csv"))
 
     # Instantiate artist retriever
     artist_retriever = ArtistRetriever()
-    artist_retriever.load_artists(Path("../datasets/artists.dat"))
+    artist_retriever.load_artists(Path("../musicSolution/lastfmdata/artists.csv"))
 
     # Instantiate KNN model using scikit-learn
     knn_model = NearestNeighbors(n_neighbors=200, algorithm='brute', metric='cosine')
