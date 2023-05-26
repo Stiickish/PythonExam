@@ -4,9 +4,13 @@ import streamlit as st
 from pathlib import Path
 import implicit
 import matplotlib.pyplot as plt
+
 from data import load_user_artists, ArtistRetriever
 from recommender import ImplicitRecommender
 from streamlit import session_state
+from sklearn.neighbors import NearestNeighbors
+import pandas as pd
+import plotly.express as px
 
 st.set_page_config(layout="wide")
 col1, col2 = st.columns(2)
@@ -184,3 +188,89 @@ def update_user_artists(user_id, favorite_bands, user_artist_matrix):
 
 if __name__ == "__main__":
     main()
+
+
+def load_data():
+    df = pd.read_csv("filtered_track_df.csv")
+    df['genres'] = df.genres.apply(lambda x: [i[1:-1] for i in str(x)[1:-1].split(", ")])
+    exploded_track_df = df.explode("genres")
+    return exploded_track_df
+
+
+st.markdown("##")
+st.subheader("Don't like any of the artist? Pick a genre and start discovering!")
+genre_names = ['Dance Pop', 'Electronic', 'Electropop', 'Hip Hop', 'Jazz', 'K-pop', 'Latin', 'Pop', 'Pop Rap', 'R&B',
+               'Rock']
+audio_feats = ["acousticness", "danceability", "energy", "instrumentalness", "valence", "tempo"]
+exploded_track_df = load_data()
+
+genre = st.selectbox("Choose your genre:", genre_names, index=genre_names.index("Pop"))
+st.markdown("##")
+
+new_col1, new_col2 = st.columns(2)
+
+
+def n_neighbors_uri_audio(genre, start_year, end_year, test_feat):
+    genre = genre.lower()
+    genre_data = exploded_track_df[
+        (exploded_track_df["genres"] == genre) & (exploded_track_df["release_year"] >= start_year) & (
+                exploded_track_df["release_year"] <= end_year)]
+    genre_data = genre_data.sort_values(by='popularity', ascending=False)[:1000]
+    neigh = NearestNeighbors()
+    neigh.fit(genre_data[audio_feats].to_numpy())
+    n_neighbors = neigh.kneighbors([test_feat], n_neighbors=len(genre_data), return_distance=False)[0]
+    uris = genre_data.iloc[n_neighbors]["uri"].tolist()
+    audios = genre_data.iloc[n_neighbors][audio_feats].to_numpy()
+    return uris, audios
+
+
+start_year, end_year = 1990, 2023  # Set default values
+
+tracks_per_page = 6
+test_feat = [0.5, 0.5, 0.5, 0.0, 0.45, 118.0]  # Set default values
+uris, audios = n_neighbors_uri_audio(genre, start_year, end_year, test_feat)
+
+tracks = []
+for uri in uris:
+    track = """<iframe src="https://open.spotify.com/embed/track/{}" width="260" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>""".format(
+        uri)
+    tracks.append(track)
+
+if 'previous_inputs' not in st.session_state:
+    st.session_state['previous_inputs'] = [genre]
+
+current_inputs = [genre]
+if current_inputs != st.session_state['previous_inputs']:
+    if 'start_track_i' in st.session_state:
+        st.session_state['start_track_i'] = 0
+    st.session_state['previous_inputs'] = current_inputs
+
+if 'start_track_i' not in st.session_state:
+    st.session_state['start_track_i'] = 0
+
+if st.button("Recommend More Songs"):
+    if st.session_state['start_track_i'] < len(tracks):
+        st.session_state['start_track_i'] += tracks_per_page
+
+current_tracks = tracks[st.session_state['start_track_i']: st.session_state['start_track_i'] + tracks_per_page]
+current_audios = audios[st.session_state['start_track_i']: st.session_state['start_track_i'] + tracks_per_page]
+if st.session_state['start_track_i'] < len(tracks):
+    for i, (track, audio) in enumerate(zip(current_tracks, current_audios)):
+        if i % 2 == 0:
+            with new_col1:
+                st.components.v1.html(track, height=400)
+                with st.expander("See more details"):
+                    df = pd.DataFrame(dict(r=audio[:5], theta=audio_feats[:5]))
+                    fig = px.line_polar(df, r='r', theta='theta', line_close=True)
+                    fig.update_layout(height=400, width=340)
+                    st.plotly_chart(fig)
+        else:
+            with new_col2:
+                st.components.v1.html(track, height=400)
+                with st.expander("See more details"):
+                    df = pd.DataFrame(dict(r=audio[:5], theta=audio_feats[:5]))
+                    fig = px.line_polar(df, r='r', theta='theta', line_close=True)
+                    fig.update_layout(height=400, width=340)
+                    st.plotly_chart(fig)
+else:
+    st.write("No songs left to recommend")
