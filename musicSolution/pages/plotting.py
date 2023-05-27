@@ -6,8 +6,14 @@ import streamlit as st
 import os
 import ast
 
-# Read data from CSV
-data = pd.read_csv('../../new_filtered_track_df.csv')
+# Get the absolute path of the script file
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the file path relative to the script directory
+file_path = os.path.join(script_dir, 'new_filtered_track_df.csv')
+
+df = pd.read_csv(file_path)
+data = pd.read_csv(file_path)
 
 # Choose the columns for x-axis, y-axis, and release year
 x_column = 'artists_name'
@@ -35,15 +41,10 @@ plt.ylabel(y_column)
 plt.title(f'Top 20 {y_column} of {x_column} by Release Year')
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.show()
 
-# Get the absolute path of the script file
-script_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Construct the file path relative to the script directory
-file_path = os.path.join(script_dir, 'new_filtered_track_df.csv')
-
-df = pd.read_csv(file_path)
+show_popular_artists = st.button("Show top 20 artists")
+if show_popular_artists:
+    st.pyplot(plt)
 
 # Convert the genres column from string to list
 df['genres'] = df['genres'].apply(ast.literal_eval)
