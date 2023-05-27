@@ -21,12 +21,9 @@ with col1:
 with col2:
     st.title("Music Solution 2000")
     info = """
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-    In vitae elementum mi. Mauris sit amet tincidunt risus, vitae semper lorem.
-    Ut et nisl dictum, sodales arcu quis, ultricies ex. Suspendisse hendrerit, neque vitae luctus bibendum, urna quam molestie velit, ac tincidunt metus mi ut massa. 
-    Nam ac interdum neque. Sed feugiat velit velit, ut mattis nisi facilisis nec. 
-    Nunc accumsan euismod diam. Curabitur commodo ex lobortis feugiat posuere. 
-    Vivamus et turpis sed lorem tristique pharetra non sed nisl. Phasellus vitae pretium massa. Aliquam erat volutpat. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+    Welcome to Music Solution 2000! The place where you meet your new favorite artist! With the beautifully constructed algorithms, we can
+    calculate and give your precise recommendations from a simple list of your favorite musicians!
+    But that's not all, see the "plotting"-page, for a lot of beautiful statistics based on our comprehensive datasets! 
     """
     st.write(info)
 
