@@ -25,8 +25,11 @@ def join_genre_and_date(artist_df, album_df, track_df):
     track = track.set_index('artists_id').join(artist[['artists_name', 'genres']],
                                                on='artists_id')
     track.reset_index(drop=False, inplace=True)
-    track['release_year'] = pd.to_datetime(track.release_date, format='mixed').dt.year
-    track.drop(columns=['Unnamed: 0', 'country', 'track_name_prev', 'track_number', 'type'], inplace=True)
+    track['release_year'] = pd.to_datetime(track.release_date, format='%Y-%m-%d').dt.year
+    track.drop(
+        columns=['Unnamed: 0', 'country', 'track_name_prev', 'track_number', 'type', 'lyrics', 'disc_number', 'href',
+                 'instrumentalness', 'liveness', 'loudness', 'mode', 'speechiness', 'valence'],
+        inplace=True)
 
     return track[track.release_year >= 1990]
 
@@ -55,4 +58,4 @@ filtered_track_df = filtered_track_df.drop(columns=['analysis_url', 'available_m
 pd.set_option('display.max_columns', None)
 display(filtered_track_df.head())
 
-filtered_track_df.to_csv("filtered_track_df.csv", index=False)
+filtered_track_df.to_csv("new_filtered_track_df.csv", index=False)
