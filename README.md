@@ -19,13 +19,13 @@ We wanted to make a music recommendation app in python, using various libraries 
 
 # List of used technologies
 
-Streamlit for visualization
-pandas for reading csv files and data modeling
-sklearn for algorithm nearestNeighbour and data cleaning
-plotly for genre plots
-implicit for algoritm ALS
-matplotlib for data plots
-scipy for matrix
+* Streamlit for visualization
+* pandas for reading csv files and data modeling
+* sklearn for algorithm nearestNeighbour and data cleaning
+* plotly for genre plots
+* implicit for algoritm ALS
+* matplotlib for data plots
+* scipy for matrix
 
 # Installation guide & user guide
 
